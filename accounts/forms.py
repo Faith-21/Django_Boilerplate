@@ -4,6 +4,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.utils.translation import gettext_lazy as _
 
 from .models import User
+from .throttling import LOCKOUT_MESSAGE, is_locked_out
 
 
 class StyledFormMixin:
@@ -32,6 +33,13 @@ class LoginForm(StyledFormMixin, AuthenticationForm):
         "invalid_login": _("That email and password combination is not recognised."),
         "inactive": _("This account has been deactivated. Contact a department administrator."),
     }
+
+    def clean(self):
+        # Checked before the credentials so a locked-out visitor sees only the
+        # lockout message, and so guesses stop being verified at all.
+        if self.request is not None and is_locked_out(self.request):
+            raise forms.ValidationError(LOCKOUT_MESSAGE, code="locked_out")
+        return super().clean()
 
 
 class SignupForm(StyledFormMixin, UserCreationForm):

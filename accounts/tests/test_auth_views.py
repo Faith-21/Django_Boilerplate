@@ -1,14 +1,20 @@
 from django.core import mail
+from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import User
+from accounts.throttling import failure_count
 
 PASSWORD = "correct-horse-9"
 
 
 class LoginTests(TestCase):
+    def tearDown(self):
+        cache.clear()
+
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(
             email="jane@example.com", password=PASSWORD, full_name="Jane Doe"
         )
@@ -52,8 +58,6 @@ class LoginTests(TestCase):
 
     @override_settings(LOGIN_RATELIMIT_ATTEMPTS=3)
     def test_repeated_failures_are_throttled(self):
-        from django.core.cache import cache
-
         cache.clear()
         for _ in range(3):
             self.client.post(
@@ -64,7 +68,39 @@ class LoginTests(TestCase):
         )
         self.assertContains(response, "Too many failed attempts")
         self.assertNotIn("_auth_user_id", self.client.session)
+
+    @override_settings(LOGIN_RATELIMIT_ATTEMPTS=3)
+    def test_the_lockout_message_is_shown_once_and_alone(self):
+        """A locked-out visitor sees one message, not a stack of them."""
         cache.clear()
+        for _ in range(3):
+            self.client.post(
+                reverse("accounts:login"), {"username": "jane@example.com", "password": "wrong-password"}
+            )
+        response = self.client.post(
+            reverse("accounts:login"), {"username": "jane@example.com", "password": "wrong-password"}
+        )
+        body = response.content.decode()
+        self.assertEqual(body.count("Too many failed attempts"), 1)
+        self.assertNotIn("is not recognised", body)
+
+    @override_settings(LOGIN_RATELIMIT_ATTEMPTS=3, LOGIN_RATELIMIT_WINDOW=300)
+    def test_a_lockout_does_not_extend_itself(self):
+        """Attempts made while locked out are not counted again."""
+        cache.clear()
+        for _ in range(5):
+            self.client.post(
+                reverse("accounts:login"), {"username": "jane@example.com", "password": "wrong-password"}
+            )
+        self.assertEqual(failure_count(self.client.request().wsgi_request), 3)
+
+    def test_a_successful_login_clears_the_failure_count(self):
+        cache.clear()
+        self.client.post(
+            reverse("accounts:login"), {"username": "jane@example.com", "password": "wrong-password"}
+        )
+        self.client.post(reverse("accounts:login"), {"username": "jane@example.com", "password": PASSWORD})
+        self.assertEqual(failure_count(self.client.request().wsgi_request), 0)
 
     def test_logout_requires_post(self):
         self.client.force_login(self.user)

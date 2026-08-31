@@ -17,7 +17,7 @@ Clone it, rename it, and start building on the dashboard.
 | **Admin** | Django admin tuned for the user model, with activate/deactivate bulk actions |
 | **Hardening** | Per-IP login attempt limiting, secure cookies and HSTS when `DEBUG=False`, throttled API |
 | **Ops** | 12-factor settings, `/healthz/` probe, WhiteNoise static files, Dockerfile, Compose with Postgres |
-| **Quality** | 41 tests, an end-to-end smoke test, Ruff config, GitHub Actions CI |
+| **Quality** | 44 tests, an end-to-end smoke test, Ruff config, GitHub Actions CI |
 
 ## Quick start
 
@@ -304,6 +304,7 @@ accounts/          user model, auth pages, roles, JSON API
   backends.py        case-insensitive email authentication
   views.py           login, signup, profile, password views
   permissions.py     role_required / RoleRequiredMixin / HasRole
+  throttling.py      per-IP login attempt limiting
   api.py             DRF auth endpoints
 core/              landing page, dashboard, role-gated example, health check
 scripts/           smoke_test.sh -- end-to-end verification over real HTTP

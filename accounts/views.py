@@ -4,30 +4,23 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.cache import cache
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import CreateView, UpdateView
 
 from .forms import LoginForm, ProfileForm, SignupForm
+from .throttling import clear_failures, client_ip, is_locked_out, record_failure
 
 logger = logging.getLogger(__name__)
 
 
-def _throttle_key(request):
-    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
-    ip = forwarded or request.META.get("REMOTE_ADDR", "")
-    return f"login-attempts:{ip}"
-
-
 class LoginView(auth_views.LoginView):
     """
-    Email/password login with a simple per-IP attempt limit.
+    Email/password login, with a per-IP limit on failed attempts.
 
-    The limiter uses the configured cache. LocMemCache (the default) is
-    per-process, which is enough to slow down casual guessing; point CACHES at
-    Redis or Memcached when the app runs on more than one worker.
+    The limit itself lives in accounts/throttling.py; LoginForm refuses to
+    check credentials once it is reached, so this view only has to keep score.
     """
 
     template_name = "registration/login.html"
@@ -35,28 +28,18 @@ class LoginView(auth_views.LoginView):
     redirect_authenticated_user = True
 
     def form_valid(self, form):
-        cache.delete(_throttle_key(self.request))
+        clear_failures(self.request)
         logger.info("Successful login for %s", form.get_user().email)
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        key = _throttle_key(self.request)
-        attempts = cache.get(key, 0) + 1
-        cache.set(key, attempts, settings.LOGIN_RATELIMIT_WINDOW)
-        logger.warning("Failed login attempt %s from %s", attempts, key)
-        if attempts >= settings.LOGIN_RATELIMIT_ATTEMPTS:
-            form.add_error(
-                None,
-                _("Too many failed attempts. Wait a few minutes before trying again."),
-            )
+        # Already locked out: the attempt was never checked, so it does not
+        # count -- otherwise hammering the form would extend the lockout
+        # indefinitely.
+        if not is_locked_out(self.request):
+            attempts = record_failure(self.request)
+            logger.warning("Failed login attempt %s from %s", attempts, client_ip(self.request))
         return super().form_invalid(form)
-
-    def post(self, request, *args, **kwargs):
-        if cache.get(_throttle_key(request), 0) >= settings.LOGIN_RATELIMIT_ATTEMPTS:
-            form = self.get_form()
-            form.add_error(None, _("Too many failed attempts. Wait a few minutes before trying again."))
-            return self.form_invalid(form)
-        return super().post(request, *args, **kwargs)
 
 
 class LogoutView(auth_views.LogoutView):
