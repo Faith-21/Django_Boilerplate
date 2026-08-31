@@ -103,6 +103,13 @@ class PasswordResetView(auth_views.PasswordResetView):
     subject_template_name = "registration/password_reset_subject.txt"
     success_url = reverse_lazy("accounts:password_reset_done")
 
+    @property
+    def extra_email_context(self):
+        # Without django.contrib.sites, Django falls back to the request host,
+        # so reset emails would otherwise say "your 127.0.0.1:8000 account".
+        # Read at request time so the setting can be changed or overridden.
+        return {"site_name": settings.SITE_NAME}
+
 
 class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     template_name = "registration/password_reset_confirm.html"

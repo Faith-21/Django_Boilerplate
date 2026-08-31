@@ -160,6 +160,14 @@ class PasswordResetTests(TestCase):
         response = self.client.get(f"/{path}", follow=True)
         self.assertEqual(response.status_code, 200)
 
+    def test_the_email_uses_the_configured_site_name(self):
+        """Not the request host -- there is no sites framework to fall back on."""
+        with override_settings(SITE_NAME="Physics Department"):
+            self.client.post(reverse("accounts:password_reset"), {"email": "jane@example.com"})
+        self.assertIn("Physics Department", mail.outbox[0].subject)
+        self.assertIn("Physics Department", mail.outbox[0].body)
+        self.assertNotIn("testserver", mail.outbox[0].subject)
+
     def test_unknown_address_does_not_leak(self):
         response = self.client.post(reverse("accounts:password_reset"), {"email": "nobody@example.com"})
         self.assertRedirects(response, reverse("accounts:password_reset_done"))

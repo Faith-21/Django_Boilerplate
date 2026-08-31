@@ -17,7 +17,7 @@ Clone it, rename it, and start building on the dashboard.
 | **Admin** | Django admin tuned for the user model, with activate/deactivate bulk actions |
 | **Hardening** | Per-IP login attempt limiting, secure cookies and HSTS when `DEBUG=False`, throttled API |
 | **Ops** | 12-factor settings, `/healthz/` probe, WhiteNoise static files, Dockerfile, Compose with Postgres |
-| **Quality** | 44 tests, an end-to-end smoke test, Ruff config, GitHub Actions CI |
+| **Quality** | 45 tests, an end-to-end smoke test, Ruff config, GitHub Actions CI |
 
 ## Quick start
 
