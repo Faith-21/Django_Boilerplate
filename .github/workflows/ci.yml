@@ -37,6 +37,16 @@ jobs:
       - name: Coverage report
         run: coverage report
 
+      # Catches settings that break for someone who just copied .env.example.
+      - name: Fresh checkout starts with the example environment
+        run: |
+          cp .env.example .env
+          python manage.py check
+          python manage.py migrate --noinput
+
+      - name: End-to-end smoke test
+        run: PYTHON=python ./scripts/smoke_test.sh
+
       - name: Deployment checks
         run: python manage.py check --deploy --fail-level ERROR
         env:

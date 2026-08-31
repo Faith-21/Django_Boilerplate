@@ -34,7 +34,16 @@ class AuthAPITests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_me_requires_authentication(self):
-        self.assertEqual(self.client.get(reverse("accounts-api:me")).status_code, 403)
+        # 401 (not 403) because TokenAuthentication is first in the chain and
+        # supplies a WWW-Authenticate header.
+        self.assertEqual(self.client.get(reverse("accounts-api:me")).status_code, 401)
+
+    def test_a_revoked_token_stops_working(self):
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        self.assertEqual(self.client.get(reverse("accounts-api:me")).status_code, 200)
+        Token.objects.filter(user=self.user).delete()
+        self.assertEqual(self.client.get(reverse("accounts-api:me")).status_code, 401)
 
     def test_me_returns_and_updates_the_caller(self):
         self.client.force_authenticate(self.user)

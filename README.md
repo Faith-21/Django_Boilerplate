@@ -17,7 +17,7 @@ Clone it, rename it, and start building on the dashboard.
 | **Admin** | Django admin tuned for the user model, with activate/deactivate bulk actions |
 | **Hardening** | Per-IP login attempt limiting, secure cookies and HSTS when `DEBUG=False`, throttled API |
 | **Ops** | 12-factor settings, `/healthz/` probe, WhiteNoise static files, Dockerfile, Compose with Postgres |
-| **Quality** | 35 tests, Ruff lint/format config, GitHub Actions CI |
+| **Quality** | 41 tests, an end-to-end smoke test, Ruff config, GitHub Actions CI |
 
 ## Quick start
 
@@ -142,10 +142,103 @@ curl http://127.0.0.1:8000/api/auth/me/ -H 'Authorization: Token a933...'
 New API views are authenticated by default (`IsAuthenticated` is the project-wide
 default permission); opt out explicitly with `permission_classes = [AllowAny]`.
 
+## Verifying it works
+
+Three layers, from fastest to most convincing.
+
+### 1. One command
+
+```bash
+make verify
+```
+
+Runs the linter, the test suite, then starts a server and exercises the whole
+application over real HTTP — 29 checks covering public pages, protected pages,
+sign-in for each role, the role gate, CSRF, and the JSON API. Every line prints
+PASS or FAIL, and the command exits non-zero if anything fails.
+
+Use `make test` alone (about a second) while you are writing code, and
+`make verify` before you hand a project to someone else.
+
+### 2. The end-to-end smoke test on its own
+
+```bash
+make smoke                    # starts its own server on port 8765
+./scripts/smoke_test.sh 8000  # or point it at a server you already have running
+```
+
+This is the check to run after deploying, or when something feels wrong. It
+catches what unit tests cannot see: cookies, CSRF, redirects, static files and
+the real login round-trip. It creates the demo accounts described below, so run
+it against development or staging, never production.
+
+### 3. Click through it yourself
+
+Some things only a person can judge — that the pages read well, that error
+messages make sense, that the reset email arrives. Create one account per role:
+
+```bash
+make demo    # admin@example.com, manager@example.com, member@example.com
+             # password for all three: demo-passphrase-42
+make run
+```
+
+(`make demo` refuses to run when `DEBUG=False`, so these known passwords cannot
+reach a real deployment.)
+
+Then walk through this list at http://127.0.0.1:8000/ — it is the behaviour the
+project is supposed to guarantee:
+
+| Step | What should happen |
+|---|---|
+| Visit `/dashboard/` signed out | Bounced to the login page |
+| Sign in as `member@example.com` | Lands on the dashboard, greeted by name |
+| Look at the nav as the member | No **Team** or **Admin** links |
+| Type `/team/` in the address bar | **403 Forbidden** — the role gate holds even without a link |
+| Sign out, sign in as `manager@example.com` | **Team** appears in the nav and the page opens |
+| Sign in as `admin@example.com` | **Team** and **Admin** both work |
+| Sign in with `MEMBER@EXAMPLE.COM` | Works — email is case-insensitive |
+| Sign in with a wrong password | Stays on the login page with an error, and does not say whether the address exists |
+| Get the password wrong 8 times | "Too many failed attempts" — the limiter kicks in |
+| Use **Forgotten your password?** | The reset email is printed in the terminal running the server; the link opens a working form |
+| Edit your name on `/accounts/profile/` | Saves, and there is no field to change your own role |
+| In `/admin/`, deactivate a user, then try to sign in as them | Refused, with a message to contact an administrator |
+
+### Does it do what *we* want?
+
+The tests prove it does what it says. Whether that matches your department is a
+separate question — the settings most likely to need a decision are:
+
+- **Who may create an account?** `SIGNUP_OPEN` and
+  `SIGNUP_ALLOWED_EMAIL_DOMAINS` (see *Controlling who gets in* above). Try
+  registering from a personal address to confirm your choice is enforced.
+- **Are three roles enough?** Add one in `accounts/models.py` (`User.Role`),
+  make a migration, and it works everywhere immediately.
+- **Do reset emails actually arrive?** Development prints them to the console.
+  Point `EMAIL_*` at your real SMTP server and repeat the reset test before you
+  rely on it.
+- **Session length.** `SESSION_COOKIE_AGE` defaults to 12 hours.
+
+### Before a deployment
+
+```bash
+make check     # Django's own deployment checklist
+```
+
+Run it with your production environment loaded (`DEBUG=False`, a real
+`DJANGO_SECRET_KEY`, your real `ALLOWED_HOSTS`). It should report no issues. The
+app deliberately refuses to start with `DEBUG=False` and no secret key.
+
+CI runs the linter, the tests, a check for missing migrations, a fresh-checkout
+start-up using `.env.example`, the smoke test and the deployment checklist on
+every push.
+
 ## Development
 
 ```bash
 make test        # run the suite (fast: in-memory database, cheap hashing)
+make smoke       # end-to-end check over real HTTP
+make verify      # lint + test + smoke
 make coverage    # tests plus a coverage report
 make lint        # ruff check + format check
 make format      # auto-fix
@@ -213,6 +306,7 @@ accounts/          user model, auth pages, roles, JSON API
   permissions.py     role_required / RoleRequiredMixin / HasRole
   api.py             DRF auth endpoints
 core/              landing page, dashboard, role-gated example, health check
+scripts/           smoke_test.sh -- end-to-end verification over real HTTP
 templates/         base layout, auth pages, dashboard
 static/css/        one small stylesheet, no build step
 ```

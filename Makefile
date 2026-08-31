@@ -1,4 +1,4 @@
-.PHONY: help install run migrations migrate superuser test coverage lint format check clean
+.PHONY: help install run migrations migrate superuser demo test smoke verify coverage lint format check clean
 
 help:  ## Show the available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -21,8 +21,19 @@ migrate:  ## Apply migrations
 superuser:  ## Create an administrator account
 	.venv/bin/python manage.py createsuperuser
 
+demo:  ## Create demo accounts (one per role) for manual testing
+	.venv/bin/python manage.py seed_demo
+
 test:  ## Run the test suite
 	.venv/bin/python manage.py test --settings=config.test_settings
+
+smoke:  ## Start a server and check the whole app over real HTTP
+	./scripts/smoke_test.sh
+
+verify:  ## Everything: lint, tests and the end-to-end smoke test
+	$(MAKE) lint
+	$(MAKE) test
+	$(MAKE) smoke
 
 coverage:  ## Run tests with a coverage report
 	.venv/bin/coverage run manage.py test --settings=config.test_settings

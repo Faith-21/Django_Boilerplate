@@ -9,6 +9,7 @@ Copy `.env.example` to `.env` and adjust before running the project.
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,6 +30,20 @@ env = environ.Env(
 
 environ.Env.read_env(BASE_DIR / ".env")
 
+
+def env_str(key, default=""):
+    """
+    Read a string setting, treating a blank value as "not set".
+
+    `.env.example` ships keys with empty values (DATABASE_URL=, EMAIL_HOST=),
+    and django-environ would otherwise hand those blanks straight through --
+    a blank DATABASE_URL parses to an unusable database config rather than
+    falling back to SQLite.
+    """
+    value = env(key, default=default)
+    return value.strip() if isinstance(value, str) and value.strip() else default
+
+
 # --------------------------------------------------------------------------
 # Core
 # --------------------------------------------------------------------------
@@ -37,9 +52,14 @@ DEBUG = env("DEBUG")
 # A throwaway key is used only in DEBUG so a fresh clone runs with no setup.
 # Production start-up fails loudly if DJANGO_SECRET_KEY is not set.
 if DEBUG:
-    SECRET_KEY = env("DJANGO_SECRET_KEY", default="insecure-development-key-do-not-use-in-production")
+    SECRET_KEY = env_str("DJANGO_SECRET_KEY", "insecure-development-key-do-not-use-in-production")
 else:
-    SECRET_KEY = env("DJANGO_SECRET_KEY")
+    SECRET_KEY = env_str("DJANGO_SECRET_KEY")
+    if not SECRET_KEY:
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY must be set when DEBUG=False. Generate one with:\n"
+            '  python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"'
+        )
 
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
@@ -96,7 +116,7 @@ ASGI_APPLICATION = "config.asgi.application"
 # --------------------------------------------------------------------------
 # SQLite by default so a clone runs immediately; set DATABASE_URL to a
 # postgres:// URL (see docker-compose.yml) for anything shared or deployed.
-DATABASES = {"default": env.db("DATABASE_URL")}
+DATABASES = {"default": env.db_url_config(env_str("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}"))}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 if not DATABASES["default"]["ENGINE"].endswith("sqlite3"):
     DATABASES["default"]["CONN_MAX_AGE"] = 60
@@ -134,15 +154,17 @@ SIGNUP_OPEN = env.bool("SIGNUP_OPEN", default=True)
 # When set, only these email domains may register, e.g. "dept.example.edu".
 SIGNUP_ALLOWED_EMAIL_DOMAINS = env.list("SIGNUP_ALLOWED_EMAIL_DOMAINS", default=[])
 
-SITE_NAME = env("SITE_NAME", default="Department Portal")
+SITE_NAME = env_str("SITE_NAME", "Department Portal")
 
 # --------------------------------------------------------------------------
 # REST framework
 # --------------------------------------------------------------------------
 REST_FRAMEWORK = {
+    # Token first so an API client with a bad or revoked token gets a proper
+    # 401 with a WWW-Authenticate header rather than a bare 403.
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_THROTTLE_CLASSES": [
@@ -157,8 +179,8 @@ REST_FRAMEWORK = {
 # --------------------------------------------------------------------------
 # Internationalisation
 # --------------------------------------------------------------------------
-LANGUAGE_CODE = env("LANGUAGE_CODE", default="en-us")
-TIME_ZONE = env("TIME_ZONE", default="UTC")
+LANGUAGE_CODE = env_str("LANGUAGE_CODE", "en-us")
+TIME_ZONE = env_str("TIME_ZONE", "UTC")
 USE_I18N = True
 USE_TZ = True
 
@@ -190,9 +212,9 @@ STORAGES = {
 # --------------------------------------------------------------------------
 # The console backend prints password-reset emails to the terminal in
 # development; point EMAIL_* at a real SMTP server for production.
-EMAIL_BACKEND = env("EMAIL_BACKEND")
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
-EMAIL_HOST = env("EMAIL_HOST")
+EMAIL_BACKEND = env_str("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = env_str("DEFAULT_FROM_EMAIL", "no-reply@example.com")
+EMAIL_HOST = env_str("EMAIL_HOST")
 EMAIL_PORT = env("EMAIL_PORT")
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
