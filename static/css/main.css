@@ -1,0 +1,165 @@
+/* Minimal, dependency-free styling. Swap in your department's own if you have one. */
+
+:root {
+  color-scheme: light dark;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #16191d;
+  --muted: #5c646e;
+  --border: #dfe3e8;
+  --accent: #2f5bd7;
+  --accent-text: #ffffff;
+  --danger: #b3261e;
+  --success: #1b6b3a;
+  --radius: 10px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171c;
+    --surface: #1c2027;
+    --text: #e8eaed;
+    --muted: #a2abb6;
+    --border: #2e343d;
+    --accent: #7ea2ff;
+    --accent-text: #101318;
+    --danger: #f2857c;
+    --success: #71d19a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); }
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand { font-weight: 650; text-decoration: none; color: var(--text); }
+
+.site-nav { display: flex; align-items: center; gap: 1.1rem; }
+.site-nav a { text-decoration: none; }
+.site-nav a:hover { text-decoration: underline; }
+
+.inline-form { display: inline; margin: 0; }
+
+.site-main { flex: 1; width: 100%; max-width: 62rem; margin: 0 auto; padding: 2rem 1.5rem; }
+.site-main--narrow { max-width: 27rem; }
+
+.site-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.hero h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+.hero__lead { color: var(--muted); max-width: 38rem; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.card__title { margin: 0 0 0.5rem; font-size: 1.25rem; }
+.card__intro { color: var(--muted); margin-top: 0; }
+.card__meta { margin-top: 1.25rem; font-size: 0.9rem; }
+
+.card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  margin-top: 1.5rem;
+}
+
+.field { margin-bottom: 1rem; }
+.field__label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem; }
+
+.field__input {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.field__input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field__help { color: var(--muted); font-size: 0.8rem; margin: 0.35rem 0 0; }
+.field__error { color: var(--danger); font-size: 0.85rem; margin: 0.35rem 0 0; }
+.field--invalid .field__input { border-color: var(--danger); }
+
+.form-errors {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.6rem 1.1rem;
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button--primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.button--link { border: 0; background: none; color: var(--accent); padding: 0; }
+.button--link:hover { text-decoration: underline; }
+
+.messages { list-style: none; margin: 0 0 1.5rem; padding: 0; }
+
+.message {
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-bottom: 0.5rem;
+}
+
+.message--success { border-color: var(--success); }
+.message--error { border-color: var(--danger); }
+
+.detail-list { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 1rem; margin: 0 0 1.5rem; }
+.detail-list dt { color: var(--muted); font-size: 0.9rem; }
+.detail-list dd { margin: 0; }
+
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); }
+.table th, .table td { text-align: left; padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border); }
+.table th { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+
+.muted { color: var(--muted); }
+code { background: var(--bg); padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.9em; }

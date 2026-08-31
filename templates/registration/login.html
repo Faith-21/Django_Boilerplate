@@ -1,0 +1,18 @@
+{% extends "auth_base.html" %}
+
+{% block title %}Sign in · {{ SITE_NAME }}{% endblock %}
+{% block card_title %}Sign in{% endblock %}
+{% block card_intro %}<p class="card__intro">Use your department email address.</p>{% endblock %}
+
+{% block card_body %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <button type="submit" class="button button--primary">Sign in</button>
+    <input type="hidden" name="next" value="{{ next }}">
+  </form>
+  <p class="card__meta">
+    <a href="{% url 'accounts:password_reset' %}">Forgotten your password?</a>
+    {% if SIGNUP_OPEN %}<br><a href="{% url 'accounts:signup' %}">Create an account</a>{% endif %}
+  </p>
+{% endblock %}

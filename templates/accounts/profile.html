@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Profile · {{ SITE_NAME }}{% endblock %}
+{% block main_class %}site-main--narrow{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1 class="card__title">Your profile</h1>
+    <dl class="detail-list">
+      <dt>Email</dt><dd>{{ user.email }}</dd>
+      <dt>Role</dt><dd>{{ user.get_role_display }}</dd>
+      <dt>Joined</dt><dd>{{ user.date_joined|date:"j F Y" }}</dd>
+    </dl>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/form.html" %}
+      <button type="submit" class="button button--primary">Save changes</button>
+    </form>
+    <p class="card__meta"><a href="{% url 'accounts:password_change' %}">Change your password</a></p>
+  </section>
+{% endblock %}

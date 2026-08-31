@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+  <h1>Hello, {{ user.get_short_name }}</h1>
+  <p class="muted">Signed in as {{ user.email }} · {{ user.get_role_display }}</p>
+
+  <div class="card-grid">
+    <section class="card">
+      <h2 class="card__title">Your account</h2>
+      <p>Update your name and job title, or change your password.</p>
+      <p><a href="{% url 'accounts:profile' %}">Open your profile</a></p>
+    </section>
+
+    {% if user.is_manager %}
+      <section class="card">
+        <h2 class="card__title">Team</h2>
+        <p>Managers and administrators can see everyone with an account.</p>
+        <p><a href="{% url 'core:team' %}">View the team</a></p>
+      </section>
+    {% endif %}
+
+    {% if user.is_staff %}
+      <section class="card">
+        <h2 class="card__title">Administration</h2>
+        <p>Create accounts, assign roles and deactivate people who have left.</p>
+        <p><a href="{% url 'admin:index' %}">Open the admin</a></p>
+      </section>
+    {% endif %}
+
+    <section class="card">
+      <h2 class="card__title">Build here</h2>
+      <p>Replace this page with your project. It is <code>core/views.py</code> and <code>templates/core/dashboard.html</code>.</p>
+    </section>
+  </div>
+{% endblock %}

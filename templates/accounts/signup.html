@@ -1,0 +1,13 @@
+{% extends "auth_base.html" %}
+
+{% block title %}Create account · {{ SITE_NAME }}{% endblock %}
+{% block card_title %}Create an account{% endblock %}
+
+{% block card_body %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <button type="submit" class="button button--primary">Create account</button>
+  </form>
+  <p class="card__meta">Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+{% endblock %}

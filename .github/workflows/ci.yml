@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+        env:
+          DEBUG: "True"
+
+      - name: Run tests
+        run: coverage run manage.py test --settings=config.test_settings --verbosity 2
+        env:
+          DEBUG: "True"
+
+      - name: Coverage report
+        run: coverage report
+
+      - name: Deployment checks
+        run: python manage.py check --deploy --fail-level ERROR
+        env:
+          DEBUG: "False"
+          DJANGO_SECRET_KEY: ci-only-key-not-used-anywhere-real-just-for-the-deployment-check-step
+          ALLOWED_HOSTS: example.com
+          SECURE_SSL_REDIRECT: "True"

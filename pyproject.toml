@@ -1,0 +1,18 @@
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "DJ", "C4"]
+ignore = ["B905"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["accounts", "core", "config"]
+
+[tool.coverage.run]
+source = ["accounts", "core", "config"]
+omit = ["*/migrations/*", "*/tests/*", "config/asgi.py", "config/wsgi.py"]
+
+[tool.coverage.report]
+show_missing = true
