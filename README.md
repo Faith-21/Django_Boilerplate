@@ -42,6 +42,27 @@ cp .env.example .env
 .venv/bin/python manage.py runserver
 ```
 
+### On Windows
+
+`make` is not available, so run the same steps directly (PowerShell):
+
+```powershell
+python -m venv .venv
+.venv\Scripts\pip install -r requirements-dev.txt
+Copy-Item .env.example .env
+.venv\Scripts\python manage.py migrate
+.venv\Scripts\python manage.py createsuperuser
+.venv\Scripts\python manage.py runserver
+```
+
+The equivalent of `make verify`:
+
+```powershell
+.venv\Scripts\ruff check .
+.venv\Scripts\python manage.py test --settings=config.test_settings
+.venv\Scripts\python scripts\smoke_test.py
+```
+
 ### Pages
 
 | URL | Who can see it |
@@ -163,9 +184,12 @@ Use `make test` alone (about a second) while you are writing code, and
 ### 2. The end-to-end smoke test on its own
 
 ```bash
-make smoke                    # starts its own server on port 8765
-./scripts/smoke_test.sh 8000  # or point it at a server you already have running
+make smoke                              # starts its own server on port 8765
+python scripts/smoke_test.py 8000       # or point it at a server you already have running
 ```
+
+The script is plain Python with no dependencies, so it runs the same on Windows,
+macOS and Linux — on Windows use `.venv\Scripts\python scripts\smoke_test.py`.
 
 This is the check to run after deploying, or when something feels wrong. It
 catches what unit tests cannot see: cookies, CSRF, redirects, static files and
@@ -307,7 +331,7 @@ accounts/          user model, auth pages, roles, JSON API
   throttling.py      per-IP login attempt limiting
   api.py             DRF auth endpoints
 core/              landing page, dashboard, role-gated example, health check
-scripts/           smoke_test.sh -- end-to-end verification over real HTTP
+scripts/           smoke_test.py -- end-to-end verification over real HTTP
 templates/         base layout, auth pages, dashboard
 static/css/        one small stylesheet, no build step
 ```

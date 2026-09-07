@@ -45,7 +45,7 @@ jobs:
           python manage.py migrate --noinput
 
       - name: End-to-end smoke test
-        run: PYTHON=python ./scripts/smoke_test.sh
+        run: python scripts/smoke_test.py
 
       - name: Deployment checks
         run: python manage.py check --deploy --fail-level ERROR

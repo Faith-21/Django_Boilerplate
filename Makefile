@@ -28,7 +28,7 @@ test:  ## Run the test suite
 	.venv/bin/python manage.py test --settings=config.test_settings
 
 smoke:  ## Start a server and check the whole app over real HTTP
-	./scripts/smoke_test.sh
+	.venv/bin/python scripts/smoke_test.py
 
 verify:  ## Everything: lint, tests and the end-to-end smoke test
 	$(MAKE) lint
