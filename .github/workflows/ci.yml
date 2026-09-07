@@ -47,6 +47,10 @@ jobs:
       - name: End-to-end smoke test
         run: python scripts/smoke_test.py
 
+      # The command contributors are told to run, exercised the same way.
+      - name: One-command verification
+        run: python scripts/verify.py
+
       - name: Deployment checks
         run: python manage.py check --deploy --fail-level ERROR
         env:

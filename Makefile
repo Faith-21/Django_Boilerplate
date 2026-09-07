@@ -31,9 +31,7 @@ smoke:  ## Start a server and check the whole app over real HTTP
 	.venv/bin/python scripts/smoke_test.py
 
 verify:  ## Everything: lint, tests and the end-to-end smoke test
-	$(MAKE) lint
-	$(MAKE) test
-	$(MAKE) smoke
+	.venv/bin/python scripts/verify.py
 
 coverage:  ## Run tests with a coverage report
 	.venv/bin/coverage run manage.py test --settings=config.test_settings

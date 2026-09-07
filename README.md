@@ -55,12 +55,10 @@ Copy-Item .env.example .env
 .venv\Scripts\python manage.py runserver
 ```
 
-The equivalent of `make verify`:
+Then run every check with the one command that works everywhere:
 
 ```powershell
-.venv\Scripts\ruff check .
-.venv\Scripts\python manage.py test --settings=config.test_settings
-.venv\Scripts\python scripts\smoke_test.py
+.venv\Scripts\python scripts\verify.py
 ```
 
 ### Pages
@@ -169,17 +167,34 @@ Three layers, from fastest to most convincing.
 
 ### 1. One command
 
-```bash
-make verify
+The same command on every platform — no `make` required, which matters because
+Windows does not have it:
+
+| | |
+|---|---|
+| macOS, Linux | `.venv/bin/python scripts/verify.py` |
+| Windows | `.venv\Scripts\python scripts\verify.py` |
+| Either, with make | `make verify` |
+
+It runs the linter, the formatter check, a check for missing migrations, the
+test suite, then starts a server and exercises the whole application over real
+HTTP — 29 checks covering public pages, protected pages, sign-in for each role,
+the role gate, CSRF and the JSON API. Every step prints OK or FAILED, and the
+command exits non-zero if anything fails, so CI and pre-commit hooks can use it.
+
+```
+=== Lint ===                    OK
+=== Formatting ===              OK
+=== Missing migrations ===      OK
+=== Tests ===                   OK  (45 tests)
+=== End-to-end smoke test ===   OK  (29 checks)
+
+Everything passed. The project is working.
 ```
 
-Runs the linter, the test suite, then starts a server and exercises the whole
-application over real HTTP — 29 checks covering public pages, protected pages,
-sign-in for each role, the role gate, CSRF, and the JSON API. Every line prints
-PASS or FAIL, and the command exits non-zero if anything fails.
-
-Use `make test` alone (about a second) while you are writing code, and
-`make verify` before you hand a project to someone else.
+Add `--quick` to skip the smoke test when you do not want a server started.
+Use the test suite alone (about a second) while you are writing code, and the
+full run before you hand a project to someone else.
 
 ### 2. The end-to-end smoke test on its own
 
@@ -331,7 +346,9 @@ accounts/          user model, auth pages, roles, JSON API
   throttling.py      per-IP login attempt limiting
   api.py             DRF auth endpoints
 core/              landing page, dashboard, role-gated example, health check
-scripts/           smoke_test.py -- end-to-end verification over real HTTP
+scripts/
+  verify.py          every check in one command, on any platform
+  smoke_test.py      end-to-end verification over real HTTP
 templates/         base layout, auth pages, dashboard
 static/css/        one small stylesheet, no build step
 ```
