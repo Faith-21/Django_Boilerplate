@@ -8,7 +8,7 @@ Run every check this project has, in one command, on any platform.
 Use the interpreter from the virtualenv:
 
     .venv/bin/python scripts/verify.py          macOS and Linux
-    .venv\\Scripts\\python scripts\\verify.py     Windows
+    .\\.venv\\Scripts\\python scripts\\verify.py   Windows (the leading .\\ is required)
 
 Exits 0 only when everything passes, so CI and pre-commit hooks can use it too.
 `make verify` is a shortcut for this on macOS and Linux.
@@ -58,7 +58,7 @@ def main():
             f"{RED}Django is not installed for {sys.executable}.{RESET}\n"
             "Install the dependencies first:\n"
             "  .venv/bin/pip install -r requirements-dev.txt        (macOS, Linux)\n"
-            "  .venv\\Scripts\\pip install -r requirements-dev.txt    (Windows)"
+            "  .\\.venv\\Scripts\\pip install -r requirements-dev.txt  (Windows)"
         )
         return 1
 

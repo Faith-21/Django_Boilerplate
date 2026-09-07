@@ -44,21 +44,23 @@ cp .env.example .env
 
 ### On Windows
 
-`make` is not available, so run the same steps directly (PowerShell):
+`make` is not available, so run the same steps directly (PowerShell). The
+leading `.\` is required: without it PowerShell reads `.venv\Scripts\python` as
+a module-qualified command name and reports that the module cannot be loaded.
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\pip install -r requirements-dev.txt
+.\.venv\Scripts\pip install -r requirements-dev.txt
 Copy-Item .env.example .env
-.venv\Scripts\python manage.py migrate
-.venv\Scripts\python manage.py createsuperuser
-.venv\Scripts\python manage.py runserver
+.\.venv\Scripts\python manage.py migrate
+.\.venv\Scripts\python manage.py createsuperuser
+.\.venv\Scripts\python manage.py runserver
 ```
 
 Then run every check with the one command that works everywhere:
 
 ```powershell
-.venv\Scripts\python scripts\verify.py
+.\.venv\Scripts\python scripts\verify.py
 ```
 
 ### Pages
@@ -173,7 +175,7 @@ Windows does not have it:
 | | |
 |---|---|
 | macOS, Linux | `.venv/bin/python scripts/verify.py` |
-| Windows | `.venv\Scripts\python scripts\verify.py` |
+| Windows | `.\.venv\Scripts\python scripts\verify.py` |
 | Either, with make | `make verify` |
 
 It runs the linter, the formatter check, a check for missing migrations, the
@@ -204,7 +206,7 @@ python scripts/smoke_test.py 8000       # or point it at a server you already ha
 ```
 
 The script is plain Python with no dependencies, so it runs the same on Windows,
-macOS and Linux — on Windows use `.venv\Scripts\python scripts\smoke_test.py`.
+macOS and Linux — on Windows use `.\.venv\Scripts\python scripts\smoke_test.py`.
 
 This is the check to run after deploying, or when something feels wrong. It
 catches what unit tests cannot see: cookies, CSRF, redirects, static files and
